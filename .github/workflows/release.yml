@@ -13,48 +13,44 @@ jobs:
       - name: Fetch all branches
         run: git fetch --all
 
-      - name: List all branches
-        run: git branch -r
-
       - name: Get latest release branch
         id: get-branch
         run: |
           latest_branch=$(git branch -r | grep 'release-' | sort -V | tail -n 1)
           echo "Latest branch: $latest_branch"
           if [ -z "$latest_branch" ]; then
-            echo "No release branches found. Setting latest_branch_number to 0."
             latest_branch_number=0
           else
             latest_branch_number=$(echo $latest_branch | grep -o '[0-9]\+$')
           fi
-          echo "Latest branch number: $latest_branch_number"
-          echo "latest_branch_number=$latest_branch_number" >> $GITHUB_ENV
-
-      - name: Create new release branch
-        id: create-branch
-        run: |
           new_branch_number=$((latest_branch_number + 1))
           new_branch="release-$new_branch_number"
-          git checkout -b $new_branch
+
+          echo "latest_branch_number=$latest_branch_number" >> $GITHUB_ENV
+          echo "new_branch_number=$new_branch_number" >> $GITHUB_ENV
           echo "new_branch=$new_branch" >> $GITHUB_ENV
+
+      - name: Create new release branch
+        run: |
+          git checkout -b $new_branch
 
       - name: Configure Git
         run: |
           git config --global user.email "Sidharth.Sharma1@dell.com"
           git config --global user.name "Sidharth Sharma"
-          git config --global credential.helper store
-          echo "https://${{ secrets.WORKFLOW_TOKEN }}@github.com" > ~/.git-credentials
+          git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
 
       - name: Update deploy.yml in new branch
         run: |
-          sed -i "s/release-[0-9]\+/release-$new_branch_number/g" .github/workflows/deploy.yml
+          sed -i "s/release-[0-9]\+/release-${{ env.new_branch_number }}/g" .github/workflows/deploy.yml
           git add .github/workflows/deploy.yml
-          git commit -m "Update deploy.yml for release-$new_branch_number"
+          git commit -m "Update deploy.yml for release-${{ env.new_branch_number }}"
           git push origin $new_branch
 
-      - name: Create pull request for new branch
+      - name: Create pull request for new release branch
         uses: peter-evans/create-pull-request@v4
         with:
+          token: ${{ secrets.GH_PAT }}
           branch: ${{ env.new_branch }}
           title: "Update deploy.yml for release-${{ env.new_branch_number }}"
           body: "This PR updates the deploy.yml file for the new release branch release-${{ env.new_branch_number }}."
@@ -69,10 +65,9 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
-          git config --global credential.helper store
-          echo "https://${{ secrets.WORKFLOW_TOKEN }}@github.com" > ~/.git-credentials
+          git config --global user.email "Sidharth.Sharma1@dell.com"
+          git config --global user.name "Sidharth Sharma"
+          git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
 
       - name: Update deploy.yml in main branch
         run: |
@@ -84,6 +79,7 @@ jobs:
       - name: Create pull request for main branch
         uses: peter-evans/create-pull-request@v4
         with:
+          token: ${{ secrets.GH_PAT }}
           branch: main
           title: "Update deploy.yml for release-${{ env.new_branch_number }}"
           body: "This PR updates the deploy.yml file for the new release branch release-${{ env.new_branch_number }}."
