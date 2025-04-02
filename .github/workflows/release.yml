@@ -55,7 +55,7 @@ jobs:
 
       - name: Push changes with PAT
         run: |
-          git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/YOUR_GITHUB_USERNAME/YOUR_REPO.git
+          git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
           git push origin $NEW_BRANCH
 
       - name: Output new branch name
