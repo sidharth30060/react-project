@@ -13,7 +13,7 @@ jobs:
       - name: Fetch all branches
         run: git fetch --all
 
-      - name: List all branches
+      - name: Debug: List all branches
         run: git branch -r
 
       - name: Get latest release branch
@@ -42,6 +42,8 @@ jobs:
         run: |
           git config --global user.email "Sidharth.Sharma1@dell.com"
           git config --global user.name "Sidharth Sharma"
+          git config --global credential.helper store
+          echo "https://${{ secrets.WORKFLOW_TOKEN }}@github.com" > ~/.git-credentials
 
       - name: Update deploy.yml in new branch
         run: |
@@ -69,6 +71,8 @@ jobs:
         run: |
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
+          git config --global credential.helper store
+          echo "https://${{ secrets.WORKFLOW_TOKEN }}@github.com" > ~/.git-credentials
 
       - name: Update deploy.yml in main branch
         run: |
