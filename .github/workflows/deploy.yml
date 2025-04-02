@@ -5,6 +5,10 @@ on:
     branches:
       - release-0  # Change this if your branch is different
 
+permissions:
+  contents: write
+  workflows: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
