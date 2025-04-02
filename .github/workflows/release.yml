@@ -22,24 +22,29 @@ jobs:
       - name: Determine latest release branch
         id: get-latest-release
         run: |
+          # Find the latest release-* branch
           latest_branch=$(git branch -r | grep 'release-' | sed 's/origin\///' | sort -V | tail -n 1)
-          echo "Latest branch: $latest_branch"
+          echo "Latest release branch found: $latest_branch"
           
-          if [ -z "$latest_branch" ]; then
+          # Extract the release number safely
+          if [[ -z "$latest_branch" ]]; then
             latest_branch_number=0
           else
-            latest_branch_number=$(echo $latest_branch | grep -o '[0-9]\+$')
+            latest_branch_number=$(echo "$latest_branch" | grep -oE '[0-9]+$' || echo "0")
           fi
 
+          # Increment the release number
           new_branch_number=$((latest_branch_number + 1))
           new_branch="release-$new_branch_number"
 
           echo "NEW_BRANCH=$new_branch" >> $GITHUB_ENV
+          echo "New branch to be created: $new_branch"
 
-      - name: Create new release branch
+      - name: Create new release branch from main
         run: |
+          git checkout main
           git checkout -b $NEW_BRANCH
           git push origin $NEW_BRANCH
 
       - name: Output new branch name
-        run: echo "Created new branch: $NEW_BRANCH"
+        run: echo "Successfully created new branch: $NEW_BRANCH"
