@@ -65,37 +65,37 @@ jobs:
           body: "This PR updates the deploy.yml file for the new release branch release-${{ env.new_branch_number }}."
           base: main
 
-  update-main-deploy:
-    runs-on: ubuntu-latest
-    needs: create-release-branch
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Ensure all branches are fetched
+  # update-main-deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: create-release-branch
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0  
 
-      - name: Configure Git
-        run: |
-          git config --global user.email "Sidharth.Sharma1@dell.com"
-          git config --global user.name "Sidharth Sharma"
-          git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
+  #     - name: Configure Git
+  #       run: |
+  #         git config --global user.email "Sidharth.Sharma1@dell.com"
+  #         git config --global user.name "Sidharth Sharma"
+  #         git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
 
-      - name: Create a temporary feature branch for main update
-        run: |
-          git checkout -b update-main-release-${{ env.new_branch_number }}
+  #     - name: Create a temporary feature branch for main update
+  #       run: |
+  #         git checkout -b update-main-release-${{ env.new_branch_number }}
 
-      - name: Update deploy.yml in the feature branch
-        run: |
-          sed -i "s/release-[0-9]\+/release-${{ env.new_branch_number }}/g" .github/workflows/deploy.yml
-          git add .github/workflows/deploy.yml
-          git commit -m "Update deploy.yml for release-${{ env.new_branch_number }}"
-          git push origin update-main-release-${{ env.new_branch_number }}
+  #     - name: Update deploy.yml in the feature branch
+  #       run: |
+  #         sed -i "s/release-[0-9]\+/release-${{ env.new_branch_number }}/g" .github/workflows/deploy.yml
+  #         git add .github/workflows/deploy.yml
+  #         git commit -m "Update deploy.yml for release-${{ env.new_branch_number }}"
+  #         git push origin update-main-release-${{ env.new_branch_number }}
 
-      - name: Create pull request for main branch
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
-          branch: update-main-release-${{ env.new_branch_number }}
-          title: "Update deploy.yml for release-${{ env.new_branch_number }}"
-          body: "This PR updates the deploy.yml file for release-${{ env.new_branch_number }}."
-          base: main
+  #     - name: Create pull request for main branch
+  #       uses: peter-evans/create-pull-request@v4
+  #       with:
+  #         token: ${{ secrets.GH_PAT }}
+  #         branch: update-main-release-${{ env.new_branch_number }}
+  #         title: "Update deploy.yml for release-${{ env.new_branch_number }}"
+  #         body: "This PR updates the deploy.yml file for release-${{ env.new_branch_number }}."
+  #         base: main
