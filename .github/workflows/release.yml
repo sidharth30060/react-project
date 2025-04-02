@@ -5,7 +5,7 @@ on:
 
 permissions:
   actions: write
-  workflows: write
+  contents: write
 
 jobs:
   create-release-branch:
