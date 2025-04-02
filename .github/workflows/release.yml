@@ -1,7 +1,7 @@
 name: Create Release Branch
 
 on:
-  workflow_dispatch:  
+  workflow_dispatch:  # Manually trigger the workflow
 
 permissions:
   contents: write
@@ -32,7 +32,7 @@ jobs:
           else
             latest_branch_number=$(echo "$latest_branch" | grep -oE '[0-9]+$' || echo "0")
           fi
-
+          
           # Increment the release number
           new_branch_number=$((latest_branch_number + 1))
           new_branch="release-$new_branch_number"
