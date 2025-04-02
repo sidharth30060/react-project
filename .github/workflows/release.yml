@@ -10,8 +10,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Fetch all branches
+        run: git fetch --all
+
       - name: List all branches
-        run:  git branch -r
+        run: git branch -r
 
       - name: Get latest release branch
         id: get-branch
@@ -19,10 +22,11 @@ jobs:
           latest_branch=$(git branch -r | grep 'release-' | sort -V | tail -n 1)
           echo "Latest branch: $latest_branch"
           if [ -z "$latest_branch" ]; then
-            echo "No release branches found."
-            exit 1
+            echo "No release branches found. Setting latest_branch_number to 0."
+            latest_branch_number=0
+          else
+            latest_branch_number=$(echo $latest_branch | grep -o '[0-9]\+$')
           fi
-          latest_branch_number=$(echo $latest_branch | grep -o '[0-9]\+$')
           echo "Latest branch number: $latest_branch_number"
           echo "latest_branch_number=$latest_branch_number" >> $GITHUB_ENV
 
