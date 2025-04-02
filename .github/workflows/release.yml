@@ -60,4 +60,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Output new branch name
-        run: echo "Successfully created new branch: $NEW_BRANCH"
+        run: |
+          echo "Successfully created new branch: $NEW_BRANCH"
