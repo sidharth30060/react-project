@@ -47,5 +47,5 @@ jobs:
           git push origin $NEW_BRANCH
 
       - name: Output new branch name
-        run: echo "Successfully created new branch: $NEW_BRANCH"
-
+        run: |
+          echo "Successfully created new branch: $NEW_BRANCH"
