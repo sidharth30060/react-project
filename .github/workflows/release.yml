@@ -1,101 +1,45 @@
-name: Create Release Branch and Update Deploy
+name: Create Release Branch
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manually trigger the workflow
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
-  deployments: write
-
 
 jobs:
   create-release-branch:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure all branches are fetched
+          fetch-depth: 0  # Fetch all branches
 
       - name: Fetch all branches
         run: git fetch --all
 
-      - name: Get latest release branch
-        id: get-branch
+      - name: Determine latest release branch
+        id: get-latest-release
         run: |
           latest_branch=$(git branch -r | grep 'release-' | sed 's/origin\///' | sort -V | tail -n 1)
           echo "Latest branch: $latest_branch"
+          
           if [ -z "$latest_branch" ]; then
             latest_branch_number=0
           else
             latest_branch_number=$(echo $latest_branch | grep -o '[0-9]\+$')
           fi
+
           new_branch_number=$((latest_branch_number + 1))
           new_branch="release-$new_branch_number"
 
-          echo "latest_branch_number=$latest_branch_number" >> $GITHUB_ENV
-          echo "new_branch_number=$new_branch_number" >> $GITHUB_ENV
-          echo "new_branch=$new_branch" >> $GITHUB_ENV
+          echo "NEW_BRANCH=$new_branch" >> $GITHUB_ENV
 
-      - name: Create and switch to new release branch
+      - name: Create new release branch
         run: |
-          git checkout -b $new_branch
+          git checkout -b $NEW_BRANCH
+          git push origin $NEW_BRANCH
 
-      - name: Configure Git
-        run: |
-          git config --global user.email "Sidharth.Sharma1@dell.com"
-          git config --global user.name "Sidharth Sharma"
-          git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
-
-      - name: Update deploy.yml in new branch
-        run: |
-          sed -i "s/release-[0-9]\+/release-${{ env.new_branch_number }}/g" .github/workflows/deploy.yml
-          git add .github/workflows/deploy.yml
-          git commit -m "Update deploy.yml for release-${{ env.new_branch_number }}"
-          git push origin $new_branch
-
-      - name: Create pull request for new release branch
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
-          branch: ${{ env.new_branch }}
-          title: "Update deploy.yml for release-${{ env.new_branch_number }}"
-          body: "This PR updates the deploy.yml file for the new release branch release-${{ env.new_branch_number }}."
-          base: main
-
-  # update-main-deploy:
-  #   runs-on: ubuntu-latest
-  #   needs: create-release-branch
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 0  
-
-  #     - name: Configure Git
-  #       run: |
-  #         git config --global user.email "Sidharth.Sharma1@dell.com"
-  #         git config --global user.name "Sidharth Sharma"
-  #         git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/sidharth30060/react-project.git
-
-  #     - name: Create a temporary feature branch for main update
-  #       run: |
-  #         git checkout -b update-main-release-${{ env.new_branch_number }}
-
-  #     - name: Update deploy.yml in the feature branch
-  #       run: |
-  #         sed -i "s/release-[0-9]\+/release-${{ env.new_branch_number }}/g" .github/workflows/deploy.yml
-  #         git add .github/workflows/deploy.yml
-  #         git commit -m "Update deploy.yml for release-${{ env.new_branch_number }}"
-  #         git push origin update-main-release-${{ env.new_branch_number }}
-
-  #     - name: Create pull request for main branch
-  #       uses: peter-evans/create-pull-request@v4
-  #       with:
-  #         token: ${{ secrets.GH_PAT }}
-  #         branch: update-main-release-${{ env.new_branch_number }}
-  #         title: "Update deploy.yml for release-${{ env.new_branch_number }}"
-  #         body: "This PR updates the deploy.yml file for release-${{ env.new_branch_number }}."
-  #         base: main
+      - name: Output new branch name
+        run: echo "Created new branch: $NEW_BRANCH"
