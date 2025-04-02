@@ -10,8 +10,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug: List all branches
-        run: git branch -r
+      - name: List all branches
+        run:  git branch -r
 
       - name: Get latest release branch
         id: get-branch
