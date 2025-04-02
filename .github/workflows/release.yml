@@ -44,6 +44,11 @@ jobs:
         run: |
           git checkout main
           git checkout -b $NEW_BRANCH
+      
+      - name: Configure Git User
+        run: |
+          git config --global user.email "Sidharth.Sharma1@dell.com"
+          git config --global user.name "Sidharth Sharma"      
 
       - name: Update deploy.yml with new branch name
         run: |
