@@ -3,6 +3,10 @@ name: Create Release Branch and Update Deploy
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  workflows: write
+
 jobs:
   create-release-branch:
     runs-on: ubuntu-latest
