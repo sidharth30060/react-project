@@ -14,28 +14,30 @@ jobs:
         id: get-branch
         run: |
           latest_branch=$(git branch -r | grep 'release-' | sort -V | tail -n 1)
-          echo "::set-output name=latest_branch::${latest_branch##*/}"
+          latest_branch_number=$(echo $latest_branch | grep -o '[0-9]\+$')
+          echo "latest_branch_number=$latest_branch_number" >> $GITHUB_ENV
 
       - name: Create new release branch
         id: create-branch
         run: |
-          new_branch="release-$((${{ steps.get-branch.outputs.latest_branch##*- }} + 1))"
+          new_branch_number=$((latest_branch_number + 1))
+          new_branch="release-$new_branch_number"
           git checkout -b $new_branch
-          echo "::set-output name=new_branch::$new_branch"
+          echo "new_branch=$new_branch" >> $GITHUB_ENV
 
       - name: Update deploy.yml in new branch
         run: |
-          sed -i "s/release-[0-9]\+/release-${{ steps.create-branch.outputs.new_branch##*- }}/g" .github/workflows/deploy.yml
+          sed -i "s/release-[0-9]\+/release-$new_branch_number/g" .github/workflows/deploy.yml
           git add .github/workflows/deploy.yml
-          git commit -m "Update deploy.yml for ${{ steps.create-branch.outputs.new_branch }}"
-          git push origin ${{ steps.create-branch.outputs.new_branch }}
+          git commit -m "Update deploy.yml for release-$new_branch_number"
+          git push origin $new_branch
 
       - name: Create pull request for new branch
         uses: peter-evans/create-pull-request@v4
         with:
-          branch: ${{ steps.create-branch.outputs.new_branch }}
-          title: "Update deploy.yml for ${{ steps.create-branch.outputs.new_branch }}"
-          body: "This PR updates the deploy.yml file for the new release branch ${{ steps.create-branch.outputs.new_branch }}."
+          branch: ${{ env.new_branch }}
+          title: "Update deploy.yml for release-${{ env.new_branch_number }}"
+          body: "This PR updates the deploy.yml file for the new release branch release-${{ env.new_branch_number }}."
           base: main
 
   update-main-deploy:
@@ -47,15 +49,15 @@ jobs:
 
       - name: Update deploy.yml in main branch
         run: |
-          sed -i "s/release-[0-9]\+/release-${{ needs.create-release-branch.outputs.new_branch##*- }}/g" .github/workflows/deploy.yml
+          sed -i "s/release-[0-9]\+/release-${{ env.new_branch_number }}/g" .github/workflows/deploy.yml
           git add .github/workflows/deploy.yml
-          git commit -m "Update deploy.yml for ${{ needs.create-release-branch.outputs.new_branch }}"
+          git commit -m "Update deploy.yml for release-${{ env.new_branch_number }}"
           git push origin main
 
       - name: Create pull request for main branch
         uses: peter-evans/create-pull-request@v4
         with:
           branch: main
-          title: "Update deploy.yml for ${{ needs.create-release-branch.outputs.new_branch }}"
-          body: "This PR updates the deploy.yml file for the new release branch ${{ needs.create-release-branch.outputs.new_branch }}."
+          title: "Update deploy.yml for release-${{ env.new_branch_number }}"
+          body: "This PR updates the deploy.yml file for the new release branch release-${{ env.new_branch_number }}."
           base: main
