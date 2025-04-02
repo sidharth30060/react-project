@@ -7,7 +7,9 @@ on:
 
 permissions:
   contents: write
-  workflows: write
+  issues: write
+  pull-requests: write
+  deployments: write
 
 jobs:
   build-and-deploy:
