@@ -6,12 +6,15 @@ on:
 jobs:
   update-versions:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for pushing changes
+      pull-requests: write  # Required for creating PRs
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensures full repo is fetched
+          fetch-depth: 0  # Ensure full repo history is available
 
       - name: Set up Git user
         run: |
@@ -21,13 +24,15 @@ jobs:
       - name: Create a new branch
         run: |
           BRANCH_NAME="auto-update-v1-to-v4"
+          echo "Creating new branch: $BRANCH_NAME"
           git checkout -b "$BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV  # Persist for later steps
 
       - name: Debug Directory and Files
         run: |
           pwd
           ls -la
-          ls -la src  # Check contents of src
+          ls -la src  # Check contents of src directory
 
       - name: Run version update script
         run: |
@@ -68,11 +73,13 @@ jobs:
           git add .
           git commit -m "Automated update from v1 to v4"
           git push origin "$BRANCH_NAME"
+        env:
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}  # Ensure branch name is correctly used
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: auto-update-v1-to-v4
+          branch: ${{ env.BRANCH_NAME }}
           title: "Automated Version Update"
           body: "This PR updates version references from v1 to v4 automatically."
           base: main
