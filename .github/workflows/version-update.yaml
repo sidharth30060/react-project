@@ -13,16 +13,21 @@ jobs:
         with:
           fetch-depth: 0  # Ensures full repo is fetched
 
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create a new branch
+        run: |
+          BRANCH_NAME="auto-update-v1-to-v4"
+          git checkout -b "$BRANCH_NAME"
+
       - name: Debug Directory and Files
         run: |
           pwd
           ls -la
           ls -la src  # Check contents of src
-
-      - name: Set up Git user
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run version update script
         run: |
@@ -58,10 +63,8 @@ jobs:
             exit 0
           fi
 
-      - name: Create a new branch
+      - name: Commit and Push Changes
         run: |
-          BRANCH_NAME="auto-update-v1-to-v4"
-          git checkout -b "$BRANCH_NAME"
           git add .
           git commit -m "Automated update from v1 to v4"
           git push origin "$BRANCH_NAME"
