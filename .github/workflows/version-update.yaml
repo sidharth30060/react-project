@@ -1,17 +1,21 @@
 name: Version Update
 
 on:
-  workflow_dispatch: # Allows manual trigger
-  
+  workflow_dispatch:  # Allows manual trigger
+
 jobs:
   update-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for pushing changes
+      pull-requests: write  # Needed for creating PRs
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Ensures all branches are available
+          token: ${{ secrets.PAT_TOKEN }}  # Use Personal Access Token (PAT)
 
       - name: Set up Git user
         run: |
@@ -81,10 +85,11 @@ jobs:
       - name: Force Create PR if Necessary
         uses: peter-evans/create-pull-request@v5
         with:
+          token: ${{ secrets.PAT_TOKEN }}  # Use PAT for authentication
           branch: ${{ env.BRANCH_NAME }}
           base: main
           title: "Automated Version Update"
           body: "This PR updates the versioned files automatically."
           labels: "automation, version update"
           assignees: ${{ github.actor }}
-          delete-branch: true
+          delete-branch: true  # Ensures branch is deleted after merge
