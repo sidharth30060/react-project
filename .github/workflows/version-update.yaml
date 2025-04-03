@@ -36,28 +36,28 @@ jobs:
 
       - name: Run version update script
         run: |
-          # Define versions
           versions=("v1" "v2" "v3" "v4")
-
-          # Loop through versions and copy files
           for ((i=0; i<${#versions[@]}-1; i++)); do
               src="src/${versions[i]}"
               dest="src/${versions[i+1]}"
 
-              # Ensure source directory exists
               if [ ! -d "$src" ]; then
-                  echo "Error: Source directory $src does not exist!"
+                  echo "❌ Error: Source directory $src does not exist!"
                   exit 1
               fi
 
-              # Ensure destination folder exists
               mkdir -p "$dest"
-
-              # Copy all files from src to dest
-              cp -r "$src/"* "$dest/" 2>/dev/null || echo "Warning: No files to copy from $src"
-
+              cp -r "$src/"* "$dest/" 2>/dev/null || echo "⚠️ Warning: No files copied from $src"
+              
+              # Verify files copied
+              echo "✅ Copied contents from $src to $dest"
+              
               # Replace version strings inside files
               find "$dest" -type f -exec sed -i "s/This is ${versions[i]}/This is ${versions[i+1]}/g" {} +
+
+              # Verify file modifications
+              echo "✅ Updated version strings in $dest"
+              git diff --stat "$dest"
           done
 
       - name: Check for changes
