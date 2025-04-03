@@ -63,26 +63,30 @@ jobs:
           done
           
           echo "✅ Version update script completed!"
+        
+        - name: Check for changes
+          run: |
+            git status
+            git diff
+            if git diff --quiet; then
+              echo "No changes detected, skipping PR creation."
+              exit 0
+            fi
 
-      - name: Check for changes
-        run: |
-          if git diff --quiet; then
-            echo "No changes detected, skipping PR creation."
-            exit 0
-          fi
+        - name: Commit and push changes
+          run: |
+            git add .
+            git status  # Debugging step
+            git commit -m "Automated version update"
+            git push origin $BRANCH_NAME
 
-      - name: Commit and push changes
-        run: |
-          git add .
-          git commit -m "Automated version update"
-          git push origin $BRANCH_NAME
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          branch: ${{ env.BRANCH_NAME }}
-          base: main
-          title: "Automated Version Update"
-          body: "This PR updates the versioned files automatically."
-          labels: "automation, version update"
-          assignees: ${{ github.actor }}
+        - name: Force Create PR if Necessary
+          uses: peter-evans/create-pull-request@v5
+          with:
+            branch: ${{ env.BRANCH_NAME }}
+            base: main
+            title: "Automated Version Update"
+            body: "This PR updates the versioned files automatically."
+            labels: "automation, version update"
+            assignees: ${{ github.actor }}
+            delete-branch: true
