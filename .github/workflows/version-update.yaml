@@ -67,4 +67,13 @@ jobs:
         run: |
           git add .
           git commit -m "Automated version update"
-          git push origin $BRANCH_NAME
+          git push origin $BRANCH_NAME 
+      
+      - name: Create a pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: ${{ env.BRANCH_NAME }}
+          base: main
+          title: "Automated Version Update"
+          body: "This PR updates the versioned source files."
+          labels: "automation, version-update"
