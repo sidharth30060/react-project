@@ -6,25 +6,22 @@ on:
 jobs:
   update-version:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Needed for pushing changes
-      pull-requests: write  # Needed for creating PRs
 
     steps:
-      - name: Checkout repository
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensures all branches are available
-          token: ${{ secrets.PAT_TOKEN }}  # Use Personal Access Token (PAT)
+          ref: main
+          fetch-depth: 0  # Ensure full history for branch creation
 
       - name: Set up Git user
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create a new branch
+      - name: Create new branch
         run: |
-          BRANCH_NAME="version-update-$(date +%Y%m%d-%H%M%S)"
+          BRANCH_NAME="version-update-$(date +%Y%m%d%H%M%S)"
           git checkout -b $BRANCH_NAME
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
@@ -66,30 +63,8 @@ jobs:
           
           echo "✅ Version update script completed!"
 
-      - name: Check for changes
-        run: |
-          git status
-          git diff
-          if git diff --quiet; then
-            echo "No changes detected, skipping PR creation."
-            exit 0
-          fi
-
       - name: Commit and push changes
         run: |
           git add .
-          git status  # Debugging step
           git commit -m "Automated version update"
           git push origin $BRANCH_NAME
-
-      - name: Force Create PR if Necessary
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.PAT_TOKEN }}  # Use PAT for authentication
-          branch: ${{ env.BRANCH_NAME }}
-          base: main
-          title: "Automated Version Update"
-          body: "This PR updates the versioned files automatically."
-          labels: "automation, version update"
-          assignees: ${{ github.actor }}
-          delete-branch: true  # Ensures branch is deleted after merge
