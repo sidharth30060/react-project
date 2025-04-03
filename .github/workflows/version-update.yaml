@@ -2,9 +2,7 @@ name: Version Update
 
 on:
   workflow_dispatch: # Allows manual trigger
-  schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight (adjust as needed)
-
+  
 jobs:
   update-version:
     runs-on: ubuntu-latest
