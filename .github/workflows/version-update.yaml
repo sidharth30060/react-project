@@ -1,0 +1,67 @@
+name: Version Update Automation
+
+on:
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-versions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allows pushing changes to the repository
+      pull-requests: write  # Allows creating a PR
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Ensures we're working from the latest main branch
+
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run version update script
+        run: |
+          # Define versions
+          versions=("v1" "v2" "v3" "v4")
+
+          # Loop through versions and copy files
+          for ((i=0; i<${#versions[@]}-1; i++)); do
+              src="${versions[i]}"
+              dest="${versions[i+1]}"
+
+              # Ensure destination folder exists
+              mkdir -p "$dest"
+
+              # Copy all files from src to dest
+              cp -r "$src/"* "$dest/"
+
+              # Replace version strings inside files
+              find "$dest" -type f -exec sed -i "s/This is ${src}/This is ${dest}/g" {} +
+          done
+
+      - name: Check for changes
+        run: |
+          git status
+          if git diff --quiet; then
+            echo "No changes detected. Exiting..."
+            exit 0
+          fi
+
+      - name: Create a new branch
+        run: |
+          BRANCH_NAME="auto-update-v1-to-v4"
+          git checkout -b "$BRANCH_NAME"
+          git add .
+          git commit -m "Automated update from v1 to v4"
+          git push origin "$BRANCH_NAME"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # Ensure authentication
+          branch: auto-update-v1-to-v4
+          title: "Automated Version Update"
+          body: "This PR updates version references from v1 to v4 automatically."
+          base: main
