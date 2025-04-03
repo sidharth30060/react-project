@@ -6,26 +6,23 @@ on:
 jobs:
   update-versions:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Allows pushing changes to the repository
-      pull-requests: write  # Allows creating a PR
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main  # Ensures we're working from the latest main branch
+          fetch-depth: 0  # Ensures full repo is fetched
+
+      - name: Debug Directory and Files
+        run: |
+          pwd
+          ls -la
+          ls -la src  # Check contents of src
 
       - name: Set up Git user
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      
-      - name: Debug Directory and Files
-        run: |
-          pwd
-          ls -la
-
 
       - name: Run version update script
         run: |
@@ -34,17 +31,23 @@ jobs:
 
           # Loop through versions and copy files
           for ((i=0; i<${#versions[@]}-1; i++)); do
-              src="${versions[i]}"
-              dest="${versions[i+1]}"
+              src="src/${versions[i]}"
+              dest="src/${versions[i+1]}"
+
+              # Ensure source directory exists
+              if [ ! -d "$src" ]; then
+                  echo "Error: Source directory $src does not exist!"
+                  exit 1
+              fi
 
               # Ensure destination folder exists
               mkdir -p "$dest"
 
               # Copy all files from src to dest
-              cp -r "$src/"* "$dest/"
+              cp -r "$src/"* "$dest/" 2>/dev/null || echo "Warning: No files to copy from $src"
 
               # Replace version strings inside files
-              find "$dest" -type f -exec sed -i "s/This is ${src}/This is ${dest}/g" {} +
+              find "$dest" -type f -exec sed -i "s/This is ${versions[i]}/This is ${versions[i+1]}/g" {} +
           done
 
       - name: Check for changes
@@ -66,7 +69,6 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}  # Ensure authentication
           branch: auto-update-v1-to-v4
           title: "Automated Version Update"
           body: "This PR updates version references from v1 to v4 automatically."
