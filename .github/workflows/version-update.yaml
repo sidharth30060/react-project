@@ -1,23 +1,19 @@
-name: Version Update Automation
+name: Version Update
 
 on:
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch: # Allows manual trigger
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight (adjust as needed)
 
 jobs:
-  update-versions:
+  update-version:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensures full repo is fetched
-
-      - name: Debug Directory and Files
-        run: |
-          pwd
-          ls -la
-          ls -la src  # Check contents of src
+          fetch-depth: 0  # Ensures all branches are available
 
       - name: Set up Git user
         run: |
@@ -26,60 +22,67 @@ jobs:
 
       - name: Create a new branch
         run: |
-          BRANCH_NAME="auto-update-v1-to-v4"
-          git fetch origin
-          if git ls-remote --exit-code --heads origin "$BRANCH_NAME"; then
-            echo "Branch $BRANCH_NAME already exists. Deleting it..."
-            git push origin --delete "$BRANCH_NAME"
-          fi
-          git checkout -b "$BRANCH_NAME"
+          BRANCH_NAME="version-update-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $BRANCH_NAME
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Run version update script
         run: |
+          #!/bin/bash
+          set -e  # Exit on error
+          
+          # Define the versions in reverse order
           versions=("v1" "v2" "v3" "v4")
-
-          for ((i=0; i<${#versions[@]}-1; i++)); do
+          
+          # Loop through versions in reverse order
+          for ((i=${#versions[@]}-2; i>=0; i--)); do
               src="src/${versions[i]}"
               dest="src/${versions[i+1]}"
-
+          
+              # Check if source directory exists
               if [ ! -d "$src" ]; then
                   echo "❌ Error: Source directory $src does not exist!"
                   exit 1
               fi
-
+          
+              # Ensure destination folder exists
               mkdir -p "$dest"
+          
+              # Copy all files from src to dest
               cp -r "$src/"* "$dest/" 2>/dev/null || echo "⚠️ Warning: No files copied from $src"
-              
+          
               echo "✅ Copied contents from $src to $dest"
-
+          
               # Replace version strings inside files
               find "$dest" -type f -exec sed -i "s/This is ${versions[i]}/This is ${versions[i+1]}/g" {} +
-
+          
               echo "✅ Updated version strings in $dest"
+          
+              # Show changed files
               git diff --stat "$dest"
           done
+          
+          echo "✅ Version update script completed!"
 
       - name: Check for changes
         run: |
-          git status
-          git diff --stat
           if git diff --quiet; then
-            echo "No changes detected. Exiting..."
+            echo "No changes detected, skipping PR creation."
             exit 0
           fi
 
-      - name: Commit and Push Changes
+      - name: Commit and push changes
         run: |
-          git add -A  # Stage all changes
-          git status  # Check what is staged
-          git commit -m "Automated update from v1 to v4"
-          git push --force origin "$BRANCH_NAME"  # Force push to ensure changes are reflected
+          git add .
+          git commit -m "Automated version update"
+          git push origin $BRANCH_NAME
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: auto-update-v1-to-v4
-          title: "Automated Version Update"
-          body: "This PR updates version references from v1 to v4 automatically."
+          branch: ${{ env.BRANCH_NAME }}
           base: main
+          title: "Automated Version Update"
+          body: "This PR updates the versioned files automatically."
+          labels: "automation, version update"
+          assignees: ${{ github.actor }}
